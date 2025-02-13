@@ -3,7 +3,7 @@ const { injectManifest } = require("workbox-build");
 let workboxConfig = {
   globDirectory: "out",
   globPatterns: [
-    "/index.html",
+    "index.html",
     "*.css",
     "*.js",
     "_next/**/*",
