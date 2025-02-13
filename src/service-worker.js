@@ -30,7 +30,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 // NAVIGATION ROUTING
 
 // This assumes /index.html has been precached.
-const navHandler = createHandlerBoundToURL("/");
+const navHandler = createHandlerBoundToURL("/index.html");
 const navigationRoute = new NavigationRoute(navHandler);
 registerRoute(navigationRoute);
 
