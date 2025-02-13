@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, use } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Workbox } from 'workbox-window';
 
 const sampleImages = [
-  { name: 'Sample 1', url: '/plane.jpg' },
-  { name: 'Sample 2', url: '/cats.jpg' },
-  { name: 'Sample 3', url: '/staircase.jpg' },
-  { name: 'Sample 4', url: '/desk.jpg' },
+  { name: 'Sample 1', url: '/samples/plane.jpg' },
+  { name: 'Sample 2', url: '/samples/cats.jpg' },
+  { name: 'Sample 3', url: '/samples/staircase.jpg' },
+  { name: 'Sample 4', url: '/samples/desk.jpg' },
   { name: 'Upload file', url: null },
 ];
 
@@ -141,6 +144,43 @@ export default function Home() {
       setIsWorkerEnabled(await isWorker());
     })();
 
+    if ('serviceWorker' in navigator) {
+      const wb = new Workbox('/sw.js');
+
+      const refreshPage = () => {
+        wb.addEventListener('controlling', (event) => {
+          window.location.reload();
+        });
+
+        wb.messageSkipWaiting();
+      };
+
+      const Msg = () => (
+        <div>
+          Updated app is available&nbsp;&nbsp;
+          <button onClick={refreshPage}>Reload</button>
+        </div>
+      );
+
+      const showSkipWaitingPrompt = (event) => {
+        toast.info(<Msg />);
+      };
+
+      // Add an event listener to detect when the registered
+      // service worker has installed but is waiting to activate.
+      wb.addEventListener('waiting', showSkipWaitingPrompt);
+
+      wb.register()
+        .then((reg) => {
+          console.log('Successful service worker registration', reg);
+        })
+        .catch((err) =>
+          console.error('Service worker registration failed', err)
+        );
+    } else {
+      console.error('Service Worker API is not supported in current browser');
+    }
+
     // Create a callback function for messages from the worker thread.
     const onMessageReceived = (e) => {
       switch (e.data.status) {
@@ -164,7 +204,7 @@ export default function Home() {
     // Define a cleanup function for when the component is unmounted.
     return () =>
       worker.current.removeEventListener('message', onMessageReceived);
-  });
+  }, []);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -181,28 +221,69 @@ export default function Home() {
 
   return (
     <>
-      <header className="w-full p-6 text-center">
+      <header className="w-full p-3 px-6 text-center">
         <h1 className="text-4xl font-bold">WebNN using Transformers.js</h1>
+        <p className="text-lg">
+          Made in Norway by&nbsp;
+          <a className="underline" href="https://www.linkedin.com/in/webmax/">
+            Maxim Salnikov
+          </a>
+          &nbsp;|&nbsp;
+          <a
+            className="underline"
+            href="https://github.com/webmaxru/transformers-webnn"
+          >
+            GitHub Repo
+          </a>
+          &nbsp;|&nbsp;
+          <a
+            className="underline"
+            href="https://sessionize.com/s/maxim-salnikov/privacy-first-in-browser-generative-ai-web-apps-of/105248"
+          >
+            Tech talk
+          </a>
+          &nbsp;|&nbsp;
+          <a
+            className="underline"
+            href="https://www.slideshare.net/slideshow/privacy-first-in-browser-generative-ai-web-apps-offline-ready-future-proof-standards-based/273142915"
+          >
+            Slides
+          </a>
+        </p>
       </header>
 
-      <main className="flex flex-col w-full min-h-screen p-8 gap-y-6">
-        <div className="flex gap-8  w-full ">
-          <div className="flex flex-col items-start w-1/2 gap-4">
-            <h2 className="text-2xl font-bold">Image Classification</h2>
-            <p className="text-md">
-              Assigning a label or class to an entire image
-            </p>
-            <ModelSelector
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-            />
-            <Output
-              result={result}
-              loading={loading}
-              selectedDevice={selectedDevice}
-            />
+      <main className="flex flex-col w-full p-3 px-6 gap-y-3">
+        <h2 className="text-2xl font-bold">
+          Image Classification: Assigning a label or class to an entire image
+        </h2>
+
+        <div className="flex flex-row gap-4 gap-y-0 flex-wrap content-end items-end">
+          <ModelSelector
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+          />
+
+          <APISelector
+            selectedDevice={selectedDevice}
+            setSelectedDevice={setSelectedDevice}
+            isWebGPUEnabled={isWebGPUEnabled}
+            isWebNNEnabled={isWebNNEnabled}
+          />
+          <WebNNDeviceSelector
+            selectedWebNNDevice={selectedWebNNDevice}
+            setSelectedWebNNDevice={setSelectedWebNNDevice}
+            isWebNNSelected={selectedDevice == 'webnn'}
+            isNPUEnabled={isNPUEnabled}
+          />
+          <QuantizationSelector
+            selectedQuantization={selectedQuantization}
+            setSelectedQuantization={setSelectedQuantization}
+            isFp16Enabled={isFp16Enabled}
+          />
+
+          <div className="label flex flex-col items-start gap-2">
             <button
-              className="btn btn-accent mt-auto"
+              className="btn btn-accent"
               disabled={loading || !isWorkerEnabled}
               onClick={classify}
             >
@@ -210,26 +291,13 @@ export default function Home() {
               Classify
             </button>
           </div>
-          <div className="flex flex-col items-center w-1/2">
-            <APISelector
-              selectedDevice={selectedDevice}
-              setSelectedDevice={setSelectedDevice}
-              isWebGPUEnabled={isWebGPUEnabled}
-              isWebNNEnabled={isWebNNEnabled}
-            />
-            <WebNNDeviceSelector
-              selectedWebNNDevice={selectedWebNNDevice}
-              setSelectedWebNNDevice={setSelectedWebNNDevice}
-              isWebNNSelected={selectedDevice == 'webnn'}
-              isNPUEnabled={isNPUEnabled}
-            />
-            <QuantizationSelector
-              selectedQuantization={selectedQuantization}
-              setSelectedQuantization={setSelectedQuantization}
-              isFp16Enabled={isFp16Enabled}
-            />
-          </div>
         </div>
+
+        <Output
+          result={result}
+          loading={loading}
+          selectedDevice={selectedDevice}
+        />
 
         <SampleTabs
           selectedTab={selectedTab}
@@ -279,9 +347,9 @@ const APISelector = ({
   ];
 
   return (
-    <div className="label flex flex-col items-start gap-2 w-full">
+    <div className="label flex flex-col items-start gap-2">
       <span> API:</span>
-      <div className="join border border-gray-500 rounded-full mb-4">
+      <div className="join border border-gray-500 rounded-full">
         {options.map(({ label, value, disabled }) => (
           <button
             disabled={disabled}
@@ -314,9 +382,9 @@ const WebNNDeviceSelector = ({
 
   return (
     <>
-      <div className="label flex flex-col items-start gap-2 w-full">
+      <div className="label flex flex-col items-start gap-2">
         <span> WebNN Device:</span>
-        <div className="join border border-gray-500 rounded-full mb-4">
+        <div className="join border border-gray-500 rounded-full">
           {options.map(({ label, value, disabled }) => (
             <button
               disabled={disabled}
@@ -350,9 +418,9 @@ const QuantizationSelector = ({
 
   return (
     <>
-      <div className="label flex flex-col items-start gap-2 w-full">
+      <div className="label flex flex-col items-start gap-2">
         <span> Quantization:</span>
-        <div className="join border border-gray-500 rounded-full mb-4">
+        <div className="join border border-gray-500 rounded-full">
           {options.map(({ label, value, disabled }) => (
             <button
               disabled={disabled}
@@ -436,10 +504,10 @@ const ModelSelector = ({ selectedModel, setSelectedModel }) => {
   ];
 
   return (
-    <label className=" flex flex-col items-start ">
+    <label className=" label flex flex-col items-start gap-2 ">
       <span> Model:</span>
       <select
-        className="select select-accent w-full max-w-xs mt-4"
+        className="select select-accent w-full max-w-xs  border border-gray-500 rounded-full"
         value={selectedModel}
         onChange={(e) => setSelectedModel(e.target.value)}
       >
