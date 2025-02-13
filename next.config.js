@@ -2,7 +2,8 @@
 const nextConfig = {
   // (Optional) Export as a static site
   // See https://nextjs.org/docs/pages/building-your-application/deploying/static-exports#configuration
-  output: "export", // Feel free to modify/remove this option
+  output: "export",
+  trailingSlash: true, // enable trailing slash
 
   // Override the default webpack configuration
   webpack: (config) => {
