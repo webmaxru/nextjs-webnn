@@ -231,7 +231,7 @@ export default function Home() {
           &nbsp;|&nbsp;
           <a
             className="underline"
-            href="https://github.com/webmaxru/transformers-webnn"
+            href="https://github.com/webmaxru/nextjs-webnn"
           >
             GitHub Repo
           </a>
