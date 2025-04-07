@@ -377,7 +377,7 @@ const WebNNDeviceSelector = ({
     { label: 'Default', value: '', disabled: !isWebNNSelected },
     { label: 'CPU', value: 'cpu', disabled: !isWebNNSelected },
     { label: 'GPU', value: 'gpu', disabled: !isWebNNSelected },
-    { label: 'NPU', value: 'npu', disabled: isWebNNSelected || !isNPUEnabled },
+    { label: 'NPU', value: 'npu', disabled: !isWebNNSelected || !isNPUEnabled },
   ];
 
   return (
