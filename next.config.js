@@ -4,6 +4,7 @@ const nextConfig = {
   // See https://nextjs.org/docs/pages/building-your-application/deploying/static-exports#configuration
   output: "export",
   trailingSlash: true, // enable trailing slash
+  swcMinify: false,
 
   // Override the default webpack configuration
   webpack: (config) => {
