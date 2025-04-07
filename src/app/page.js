@@ -13,6 +13,11 @@ const sampleImages = [
   { name: 'Upload file', url: null },
 ];
 
+const session_options = {
+  freeDimensionOverrides: {},
+  context: {},
+}
+
 async function isWebNN() {
   let navigatorObj = navigator;
 
@@ -51,6 +56,8 @@ async function isNPU() {
 }
 
 async function isFp16() {
+
+  return true; // temporarily disable fp16 check
   let navigatorObj = navigator;
 
   try {
@@ -79,7 +86,7 @@ export default function Home() {
   const [selectedWebNNDevice, setSelectedWebNNDevice] = useState('');
   const [selectedQuantization, setSelectedQuantization] = useState('fp32');
   const [selectedModel, setSelectedModel] = useState(
-    'Xenova/fastvit_t12.apple_in1k'
+    'Xenova/resnet-50'
   );
 
   const [isWebGPUEnabled, setIsWebGPUEnabled] = useState(true);
@@ -92,6 +99,16 @@ export default function Home() {
   const worker = useRef(null);
 
   const classify = useCallback(() => {
+
+    if (selectedDevice == 'webnn') {
+      session_options.freeDimensionOverrides = {
+        batch_size: 1,
+        num_channels: 3,
+        height: 224,
+        width: 224,
+      };
+    }
+
     if (worker.current) {
       worker.current.postMessage({
         model: selectedModel,
@@ -102,6 +119,7 @@ export default function Home() {
         dtype: selectedQuantization,
         task: 'image-classification',
         input: selectedImageUrl,
+        session_options: session_options,
       });
 
       setLoading(true);
@@ -354,9 +372,8 @@ const APISelector = ({
           <button
             disabled={disabled}
             key={label}
-            className={`btn join-item rounded-full px-6 ${
-              selectedDevice === value ? 'bg-neutral text-white' : 'bg-base-100'
-            }`}
+            className={`btn join-item rounded-full px-6 ${selectedDevice === value ? 'bg-neutral text-white' : 'bg-base-100'
+              }`}
             onClick={() => setSelectedDevice(value)}
           >
             {label}
@@ -389,11 +406,10 @@ const WebNNDeviceSelector = ({
             <button
               disabled={disabled}
               key={label}
-              className={`btn join-item rounded-full px-6 ${
-                selectedWebNNDevice === value
+              className={`btn join-item rounded-full px-6 ${selectedWebNNDevice === value
                   ? 'bg-neutral text-white'
                   : 'bg-base-100'
-              }`}
+                }`}
               onClick={() => setSelectedWebNNDevice(value)}
             >
               {label}
@@ -425,11 +441,10 @@ const QuantizationSelector = ({
             <button
               disabled={disabled}
               key={label}
-              className={`btn join-item rounded-full px-6 ${
-                selectedQuantization === value
+              className={`btn join-item rounded-full px-6 ${selectedQuantization === value
                   ? 'bg-neutral text-white'
                   : 'bg-base-100'
-              }`}
+                }`}
               onClick={() => setSelectedQuantization(value)}
             >
               {label}
@@ -453,9 +468,8 @@ const SampleTabs = ({
         {sampleImages.map((image, index) => (
           <button
             key={index}
-            className={`tab tab-lg ${
-              selectedTab === index ? 'tab-active' : ''
-            }`}
+            className={`tab tab-lg ${selectedTab === index ? 'tab-active' : ''
+              }`}
             onClick={() => setSelectedTab(index)}
           >
             {image.name}
@@ -501,6 +515,14 @@ const ModelSelector = ({ selectedModel, setSelectedModel }) => {
       label: 'Xenova/resnet-50',
       value: 'Xenova/resnet-50',
     },
+    {
+      label: 'webnn/efficientnet-lite4',
+      value: 'webnn/efficientnet-lite4',
+    },
+    {
+      label: 'webnn/mobilenet-v2',
+      value: 'webnn/mobilenet-v2',
+    }
   ];
 
   return (

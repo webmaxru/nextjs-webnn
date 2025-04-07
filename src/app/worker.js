@@ -4,7 +4,7 @@ import { pipeline, env } from '@huggingface/transformers';
 env.allowLocalModels = false;
 
 env.backends.onnx.debug = true;
-env.backends.onnx.logLevel = 'verbose';
+// env.backends.onnx.logLevel = 'verbose';
 
 env.backends.onnx.wasm.simd = false;
 
@@ -15,12 +15,14 @@ class PipelineSingleton {
   static model = null;
   static device = null;
   static dtype = null;
+  static session_options = null;
 
   static async getInstance(
     task,
     model,
     device,
     dtype,
+    session_options,
     progress_callback = null
   ) {
     if (
@@ -28,19 +30,22 @@ class PipelineSingleton {
       this.model !== model ||
       this.device !== device ||
       this.dtype !== dtype ||
+      this.session_options !== session_options ||
       this.task !== task
     ) {
       console.log(
-        `[Worker] Creating pipeline with task ${task}, model ${model}, device ${device}, dtype ${dtype}`
+        `[Worker] Creating pipeline with task ${task}, model ${model}, device ${device}, dtype ${dtype}, session options ${JSON.stringify(session_options)}`
       );
       this.instance = await pipeline(task, model, {
         progress_callback,
         device: device,
         dtype: dtype,
+        session_options: session_options,
       });
       this.model = model;
       this.device = device;
       this.dtype = dtype;
+      this.session_options = session_options;
       this.task = task;
     }
     return this.instance;
@@ -49,7 +54,7 @@ class PipelineSingleton {
 
 // Listen for messages from the main thread
 self.addEventListener('message', async (event) => {
-  const { task, input, model, device, dtype } = event.data;
+  const { task, input, model, device, dtype, session_options } = event.data;
 
   // Retrieve the classification pipeline. When called for the first time,
   // this will load the pipeline and save it for future use.
@@ -58,6 +63,7 @@ self.addEventListener('message', async (event) => {
     model,
     device,
     dtype,
+    session_options,
     (x) => {
       // We also add a progress callback to the pipeline so that we can
       // track model loading.
